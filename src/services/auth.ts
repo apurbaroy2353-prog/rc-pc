@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
   getAuth,
-  signInWithPopup,
+  "apiKey": "AIzaSyCjP7c922fCV48Nhfa2PC_hBmEaAwrU0wc",
   GoogleAuthProvider,
   onAuthStateChanged,
   User,

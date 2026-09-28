@@ -1,40 +1,43 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
   getAuth,
-  import { initializeApp, getApps, getApp } from 'firebase/app';
-import {
-  getAuth,
   signInWithPopup,
   GoogleAuthProvider,
   onAuthStateChanged,
   User,
   signOut,
 } from 'firebase/auth';
-import firebaseConfig from '../../firebase-applet-config.json';"AIzaSyCjP7c922fCV48Nhfa2PC_hBmEaAwrU0wc",
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  User,
-  signOut,
-} from 'firebase/auth';
+
 import firebaseConfig from '../../firebase-applet-config.json';
 
 // Single Firebase App instance
-export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+export const app = getApps().length
+  ? getApp()
+  : initializeApp(firebaseConfig);
+
 export const auth = getAuth(app);
 
-// Desired Google Drive scopes
-export const SCOPES = ['https://www.googleapis.com/auth/drive.readonly'];
+// Google Drive read-only permission
+export const SCOPES = [
+  'https://www.googleapis.com/auth/drive.readonly',
+];
 
 const provider = new GoogleAuthProvider();
-SCOPES.forEach((scope) => provider.addScope(scope));
-// Prompt selection if needed
+
+// Add Google Drive scope
+SCOPES.forEach((scope) => {
+  provider.addScope(scope);
+});
+
+// Always show Google account selection
 provider.setCustomParameters({
   prompt: 'select_account',
 });
 
-// Flag to indicate if we are in the middle of a sign-in flow
+// Prevent duplicate sign-in handling
 let isSigningIn = false;
-// In-memory cache for the access token (per workspace skill instructions: never store in localStorage)
+
+// Temporary access-token cache
 let cachedAccessToken: string | null = null;
 
 export const initAuth = (
@@ -44,29 +47,42 @@ export const initAuth = (
   return onAuthStateChanged(auth, async (user: User | null) => {
     if (user) {
       if (cachedAccessToken) {
-        if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
+        onAuthSuccess?.(user, cachedAccessToken);
       } else if (!isSigningIn) {
-        // Token might need re-prompt if page reloads
-        if (onAuthFailure) onAuthFailure();
+        onAuthFailure?.();
       }
     } else {
       cachedAccessToken = null;
-      if (onAuthFailure) onAuthFailure();
+      onAuthFailure?.();
     }
   });
 };
 
-export const googleSignIn = async (): Promise<{ user: User; accessToken: string } | null> => {
+export const googleSignIn = async (): Promise<{
+  user: User;
+  accessToken: string;
+} | null> => {
   try {
     isSigningIn = true;
+
     const result = await signInWithPopup(auth, provider);
-    const credential = GoogleAuthProvider.credentialFromResult(result);
+
+    const credential =
+      GoogleAuthProvider.credentialFromResult(result);
+
     if (!credential?.accessToken) {
-      throw new Error('Failed to get Google Drive access token from Firebase Auth');
+      throw new Error(
+        'Failed to get Google Drive access token from Firebase Auth'
+      );
     }
+
     cachedAccessToken = credential.accessToken;
-    return { user: result.user, accessToken: cachedAccessToken };
-  } catch (error: any) {
+
+    return {
+      user: result.user,
+      accessToken: credential.accessToken,
+    };
+  } catch (error) {
     console.error('Google Sign In error:', error);
     throw error;
   } finally {
@@ -78,11 +94,11 @@ export const getAccessToken = (): string | null => {
   return cachedAccessToken;
 };
 
-export const setAccessToken = (token: string | null) => {
+export const setAccessToken = (token: string | null): void => {
   cachedAccessToken = token;
 };
 
-export const logout = async () => {
+export const logout = async (): Promise<void> => {
   await signOut(auth);
   cachedAccessToken = null;
 };

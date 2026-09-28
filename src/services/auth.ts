@@ -1,7 +1,16 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
   getAuth,
-  "apiKey": "AIzaSyCjP7c922fCV48Nhfa2PC_hBmEaAwrU0wc",
+  import { initializeApp, getApps, getApp } from 'firebase/app';
+import {
+  getAuth,
+  signInWithPopup,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  User,
+  signOut,
+} from 'firebase/auth';
+import firebaseConfig from '../../firebase-applet-config.json';"AIzaSyCjP7c922fCV48Nhfa2PC_hBmEaAwrU0wc",
   GoogleAuthProvider,
   onAuthStateChanged,
   User,
